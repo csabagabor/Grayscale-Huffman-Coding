@@ -8,6 +8,7 @@
 #include <bitset>
 
 #define MAX_SIZE 1000000
+#define MAX_SIZE_CODE 1000
 
 struct code_struct
 {
@@ -154,10 +155,39 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 	std::bitset<MAX_SIZE> bits(res);
 	FILE* pFile;
 	pFile = fopen("output.dat", "wb");
+
+	//write out table
+	for (int i = 0; i < 256; i++) {
+		unsigned char size = encoded[i].size();//max 256
+		//if (size > 0) {
+			//fwrite(&i, 1, 1, pFile);
+			fwrite(&size, 1, 1, pFile);
+			//write code (multiple of 8=1 byte)
+			std::bitset<MAX_SIZE_CODE> code_bits(encoded[i]);
+			fwrite(&code_bits, 1, size / 8 + 1, pFile);
+		//}
+	}
+
 	if (pFile != NULL) {
 		fwrite(&bits, 1, res.size() / 8, pFile);
 		fclose(pFile);
 	}
+}
+
+void decodeFromBinary() {
+	std::string encoded[256] = { 0 };
+	FILE* pFile;
+	pFile = fopen("output.dat", "rb");
+	for (int i = 0; i < 256; i++) {
+		unsigned char size;
+		fread(&size, 1, 1, pFile);
+
+		char buffer[MAX_SIZE_CODE];
+		fread(buffer, 1, size / 8 + 1, pFile);
+		std::string input(buffer, size / 8 + 1); // Convert char array into string
+		encoded[i] = input;
+	}
+	fclose(pFile);
 }
 
 int main()
@@ -170,6 +200,7 @@ int main()
 		destroyAllWindows();
 		printf("Menu:\n");
 		printf(" 1 - Open image\n");
+		printf(" 2 - Decode image\n");
 		printf(" 0 - Exit\n\n");
 		printf("Option: ");
 		scanf("%d",&op);
@@ -177,6 +208,9 @@ int main()
 		{
 			case 1:
 				testOpenImage();
+				break;
+			case 2:
+				decodeFromBinary();
 				break;
 		}
 	}
