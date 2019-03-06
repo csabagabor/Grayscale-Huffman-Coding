@@ -54,6 +54,8 @@ void testOpenImage()
 			for (; it != res.end(); ) {
 				if (histo[i] == it->probab) {
 					encoded[i] = it->cod;
+					//reverse string
+					std::reverse(encoded[i].begin(), encoded[i].end());
 					it = res.erase(it);
 					break;
 				}
@@ -164,27 +166,43 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 			fwrite(&size, 1, 1, pFile);
 			//write code (multiple of 8=1 byte)
 			std::bitset<MAX_SIZE_CODE> code_bits(encoded[i]);
-			fwrite(&code_bits, 1, size / 8 + 1, pFile);
+			//fwrite(&code_bits, 1, size / 8 + 1, pFile);
 		//}
 	}
 
 	if (pFile != NULL) {
-		fwrite(&bits, 1, res.size() / 8, pFile);
+		//fwrite(&bits, 1, res.size() / 8, pFile);
 		fclose(pFile);
 	}
 }
 
 void decodeFromBinary() {
-	std::string encoded[256] = { 0 };
+	std::string encoded[256] = { "" };
 	FILE* pFile;
 	pFile = fopen("output.dat", "rb");
 	for (int i = 0; i < 256; i++) {
 		unsigned char size;
 		fread(&size, 1, 1, pFile);
 
-		char buffer[MAX_SIZE_CODE];
-		fread(buffer, 1, size / 8 + 1, pFile);
-		std::string input(buffer, size / 8 + 1); // Convert char array into string
+		//char buffer[MAX_SIZE_CODE];
+		//fread(buffer, 1, size / 8 + 1, pFile);
+		char c;
+		std::string input = "";
+		int pc = 0;
+		for (int j = 0; j < size / 8 + 1; j++)
+		{
+			fread(&c, 1, 1, pFile);
+			for (int i = 7; i >= 0; i--) { // or (int i = 0; i < 8; i++)  if you want reverse bit order in bytes
+				pc++;
+				if (pc > size) break;
+				int bit = ((c >> i) & 1);
+				if(bit==1)
+					input.append("1");
+				else input.append("0");
+			}
+		}
+		//std::string input(buffer, size / 8 + 1); // Convert char array into string
+		//std::bitset<MAX_SIZE_CODE>  codes_bits("1111");  // Convert string into bitset
 		encoded[i] = input;
 	}
 	fclose(pFile);
