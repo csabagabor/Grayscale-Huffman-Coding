@@ -24,49 +24,45 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[]);
 
 void testOpenImage()
 {
-	char fname[MAX_PATH];
-	if (openFileDlg(fname))
-	{
-		int histo[256] = { 0 };
-		Mat_<uchar>img;
-		img = imread(fname);
 
-		for (int i = 0; i < img.rows; i++) {
-			for (int j = 0; j < img.cols; j++) {
-				histo[img(i,j)]++;
-			}
+	int histo[256] = { 0 };
+	Mat_<uchar>img;
+	img = imread("Images/cell.bmp", CV_LOAD_IMAGE_GRAYSCALE);	// Read the image
+
+	for (int i = 0; i < img.rows; i++) {
+		for (int j = 0; j < img.cols; j++) {
+			histo[img(i,j)]++;
 		}
+	}
 
-		int probabilities[256], index = 0;
-		for (int i = 0; i < 256; i++) {
-			if (histo[i] > 0) {
-				probabilities[index] = histo[i];
-				index++;
-			}
+	int probabilities[256], index = 0;
+	for (int i = 0; i < 256; i++) {
+		if (histo[i] > 0) {
+			probabilities[index] = histo[i];
+			index++;
 		}
+	}
 
-		std::vector<code_struct> res = calculateCodes(probabilities, index);
+	std::vector<code_struct> res = calculateCodes(probabilities, index);
 
-		std::string encoded[256];
+	std::string encoded[256];
 
-		for (int i = 0; i < 256; i++) {
-			if (histo[i] > 0) {
-				std::vector<code_struct>::iterator it = res.begin();
-				for (; it != res.end(); ) {
-					if (histo[i] == it->probab) {
-						encoded[i] = it->cod;
-						it = res.erase(it);
-						break;
-					}
-					else {
-						++it;
-					}
+	for (int i = 0; i < 256; i++) {
+		if (histo[i] > 0) {
+			std::vector<code_struct>::iterator it = res.begin();
+			for (; it != res.end(); ) {
+				if (histo[i] == it->probab) {
+					encoded[i] = it->cod;
+					it = res.erase(it);
+					break;
+				}
+				else {
+					++it;
 				}
 			}
 		}
-		saveToBinary(img, encoded);
 	}
-	
+	saveToBinary(img, encoded);
 }
 
 std::vector<code_struct> calculateCodes(int probabilities[], int index ) {
@@ -151,12 +147,15 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 			res.append(encoded[img(i,j)]);
 		}
 	}
+	if (res.size() > MAX_SIZE) {
+		printf("ERROR: PICTURE IS TO BIG!\n");
+		return;
+	}
 	std::bitset<MAX_SIZE> bits(res);
 	FILE* pFile;
-	pFile = fopen("output.dat", "w+");
+	pFile = fopen("output.dat", "wb");
 	if (pFile != NULL) {
-		//fwrite(&bits, 1, res.size() / 8, pFile);
-		fprintf(pFile, "\nThis is a sample text file\n");
+		fwrite(&bits, 1, res.size() / 8, pFile);
 		fclose(pFile);
 	}
 }
