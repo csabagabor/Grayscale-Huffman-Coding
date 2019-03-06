@@ -244,12 +244,8 @@ int main()
 
 	FILE* pFile;
 	pFile = fopen("output.dat", "wb");
-	WriteBit(1,pFile);
-	WriteBit(1, pFile);
-	WriteBit(0, pFile);
-	WriteBit(0, pFile);
-	WriteBit(1, pFile);
-	Flush_Bits(pFile);
+	std::bitset<8> code_bits("111000");
+	fwrite(&code_bits, 1, 1, pFile);
 	fclose(pFile);
 	do
 	{
