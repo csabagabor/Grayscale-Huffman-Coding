@@ -10,6 +10,30 @@
 #define MAX_SIZE 1000000
 #define MAX_SIZE_CODE 1000
 
+
+int current_bit = 0;
+unsigned char bit_buffer;
+
+void WriteBit(int bit, FILE* f)
+{
+	if (bit)
+		bit_buffer |= (1 << current_bit);
+
+	current_bit++;
+	if (current_bit == 8)
+	{
+		fwrite(&bit_buffer, 1, 1, f);
+		current_bit = 0;
+		bit_buffer = 0;
+	}
+}
+
+void Flush_Bits(FILE* f)
+{
+	while (current_bit)
+		WriteBit(0, f);
+}
+
 struct code_struct
 {
 	int probab;//probability in whole numbers(without dividing it with the total number)
@@ -164,8 +188,14 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 		//if (size > 0) {
 			//fwrite(&i, 1, 1, pFile);
 			fwrite(&size, 1, 1, pFile);
+			for (int j = 0; j < size; j++) {
+				if(encoded[i][j]=='0')
+					WriteBit(0, pFile);
+				else WriteBit(1, pFile);
+			}
+			Flush_Bits(pFile);
 			//write code (multiple of 8=1 byte)
-			std::bitset<MAX_SIZE_CODE> code_bits(encoded[i]);
+			//std::bitset<MAX_SIZE_CODE> code_bits(encoded[i]);
 			//fwrite(&code_bits, 1, size / 8 + 1, pFile);
 		//}
 	}
@@ -212,6 +242,15 @@ int main()
 {
 	int op;
 
+	FILE* pFile;
+	pFile = fopen("output.dat", "wb");
+	WriteBit(1,pFile);
+	WriteBit(1, pFile);
+	WriteBit(0, pFile);
+	WriteBit(0, pFile);
+	WriteBit(1, pFile);
+	Flush_Bits(pFile);
+	fclose(pFile);
 	do
 	{
 		//system("cls");
