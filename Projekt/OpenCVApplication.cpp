@@ -182,6 +182,11 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 	FILE* pFile;
 	pFile = fopen("output.dat", "wb");
 
+	//first save image height, width
+	//printf("%d", sizeof(img.rows));
+	fwrite(&img.rows, 4, 1, pFile);
+	fwrite(&img.cols, 4, 1, pFile);
+
 	//write out table
 	for (int i = 0; i < 256; i++) {
 		unsigned char size = encoded[i].size();//max 256
@@ -210,6 +215,15 @@ void decodeFromBinary() {
 	std::string encoded[256] = { "" };
 	FILE* pFile;
 	pFile = fopen("output.dat", "rb");
+
+	long width = 0, height = 0;
+
+	//read iamge dimensions
+	fread(&height, 4, 1, pFile);
+	fread(&width, 4, 1, pFile);
+
+	Mat img(height, width, CV_32FC1);
+
 	for (int i = 0; i < 256; i++) {
 		unsigned char size;
 		fread(&size, 1, 1, pFile);
@@ -222,7 +236,7 @@ void decodeFromBinary() {
 		for (int j = 0; j < size / 8 + 1; j++)
 		{
 			fread(&c, 1, 1, pFile);
-			for (int i = 7; i >= 0; i--) { // or (int i = 0; i < 8; i++)  if you want reverse bit order in bytes
+			for (int i = 0; i < 8; i++) { // or (int i = 0; i < 8; i++)  if you want reverse bit order in bytes
 				pc++;
 				if (pc > size) break;
 				int bit = ((c >> i) & 1);
@@ -235,18 +249,15 @@ void decodeFromBinary() {
 		//std::bitset<MAX_SIZE_CODE>  codes_bits("1111");  // Convert string into bitset
 		encoded[i] = input;
 	}
+	//read actual compressed image
+	
+
 	fclose(pFile);
 }
 
 int main()
 {
 	int op;
-
-	FILE* pFile;
-	pFile = fopen("output.dat", "wb");
-	std::bitset<8> code_bits("111000");
-	fwrite(&code_bits, 1, 1, pFile);
-	fclose(pFile);
 	do
 	{
 		//system("cls");
