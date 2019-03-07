@@ -215,6 +215,7 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 }
 
 void decodeFromBinary() {
+	
 	std::map<std::string, uchar> encoded;
 	FILE* pFile;
 	char c;
@@ -226,8 +227,7 @@ void decodeFromBinary() {
 	fread(&height, 4, 1, pFile);
 	fread(&width, 4, 1, pFile);
 
-	Mat img(height, width, CV_32FC1);
-
+	Mat img(height, width, CV_8UC1);//store result in this
 	for (int i = 0; i < 256; i++) {
 		unsigned char size;
 		fread(&size, 1, 1, pFile);
@@ -268,7 +268,25 @@ void decodeFromBinary() {
 			else image.append("0");
 		}
 	}
-	
+
+	pc = 0;
+	for (int i = 0; i < img.rows; i++) {
+		for (int j = 0; j < img.cols; j++) {
+			//decode string and build image
+			//res_size = image.size()
+			std::string good_code = "";
+			for (; pc < image.size(); pc++) {
+				good_code += image[pc];
+				if (encoded.find(good_code) != encoded.end()) {//code is valid
+					uchar value = encoded[good_code];
+					img.at<uchar>(i, j) = value;
+					break;
+				}
+			}
+		}
+	}
+	imshow("image", img);
+	waitKey();
 	fclose(pFile);
 }
 
