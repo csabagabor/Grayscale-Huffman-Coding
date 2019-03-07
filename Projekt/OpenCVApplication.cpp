@@ -214,6 +214,7 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 void decodeFromBinary() {
 	std::string encoded[256] = { "" };
 	FILE* pFile;
+	char c;
 	pFile = fopen("output.dat", "rb");
 
 	long width = 0, height = 0;
@@ -227,10 +228,7 @@ void decodeFromBinary() {
 	for (int i = 0; i < 256; i++) {
 		unsigned char size;
 		fread(&size, 1, 1, pFile);
-
-		//char buffer[MAX_SIZE_CODE];
-		//fread(buffer, 1, size / 8 + 1, pFile);
-		char c;
+	
 		std::string input = "";
 		int pc = 0;
 		for (int j = 0; j < size / 8 + 1; j++)
@@ -249,7 +247,16 @@ void decodeFromBinary() {
 		//std::bitset<MAX_SIZE_CODE>  codes_bits("1111");  // Convert string into bitset
 		encoded[i] = input;
 	}
-	//read actual compressed image
+	//read actual compressed image into a big buffer
+	std::string image = "";
+	while (fread(&c, 1, 1, pFile)) {
+		for (int i = 0; i < 8; i++) {
+			int bit = ((c >> i) & 1);
+			if (bit == 1)
+				image.append("1");
+			else image.append("0");
+		}
+	}
 	
 
 	fclose(pFile);
