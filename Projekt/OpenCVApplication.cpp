@@ -7,10 +7,6 @@
 #include <string>
 #include <map>
 
-#define MAX_SIZE 1000000
-#define MAX_SIZE_CODE 1000
-
-
 int current_bit = 0;
 unsigned char bit_buffer;
 
@@ -173,10 +169,6 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 			res.append(corresponding_code);
 		}
 	}
-	if (res.size() > MAX_SIZE) {
-		printf("ERROR: PICTURE IS TO BIG!\n");
-		return;
-	}
 	FILE* pFile;
 	pFile = fopen("output.dat", "wb");
 
@@ -244,8 +236,6 @@ void decodeFromBinary() {
 				else input.append("0");
 			}
 		}
-		//std::string input(buffer, size / 8 + 1); // Convert char array into string
-		//std::bitset<MAX_SIZE_CODE>  codes_bits("1111");  // Convert string into bitset
 		encoded[input] = i;
 	}
 
