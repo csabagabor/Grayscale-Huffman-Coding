@@ -11,6 +11,7 @@
 #define BINARY_FILE "OUTPUT.DAT"
 #define IMAGE_FILE "OUTPUT.bmp"
 char working_directory[MAX_PATH];
+char working_directory2[MAX_PATH];
 int bit_number = 0;
 unsigned char bit_buffer;
 
@@ -47,10 +48,18 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[]);
 
 void encodeImage()
 {
+	char fname[MAX_PATH];
+	//if (openFileDlg(fname));
+	GetModuleFileName(NULL, working_directory2, MAX_PATH);
+	SetCurrentDirectory(working_directory);
+	GetModuleFileName(NULL, working_directory2, MAX_PATH);
+
 	std::string fileName = INPUT_FILE;
 	int histo[256] = { 0 };
 	Mat_<uchar>img;
-	img = imread("Images/" + fileName, CV_LOAD_IMAGE_GRAYSCALE);	// Read the image
+
+	std::string path = "C:\\Users\\Csabi\\Pictures\\IP\\Grayscale-Huffman-Coding\\1color.bmp";
+	img = imread(path, CV_LOAD_IMAGE_GRAYSCALE);	// Read the image
 
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
@@ -91,6 +100,7 @@ void encodeImage()
 std::vector<code_struct> calculateCodes(int probabilities[], int index ) {
 	std::vector<code_struct> res;
 	code_struct e1, e2;
+	printf("%d\n", index);
 	//if only 2 elements then stop
 	if (index == 1) {//only one color
 		e1.probab = probabilities[0];
@@ -287,9 +297,18 @@ void decodeFromBinary() {
 	waitKey();
 	fclose(pFile);
 }
-
+void PrintFullPath(char * partialPath)
+{
+	char full[_MAX_PATH];
+	if (_fullpath(full, partialPath, _MAX_PATH) != NULL)
+		printf("Full path is: %s\n", full);
+	else
+		printf("Invalid path\n");
+}
 int main()
 {
+	PrintFullPath(".\\");
+	GetModuleFileName(NULL, working_directory, MAX_PATH);
 	int op;
 	do
 	{
