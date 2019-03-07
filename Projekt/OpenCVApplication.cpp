@@ -178,44 +178,44 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 		printf("ERROR: PICTURE IS TO BIG!\n");
 		return;
 	}
-	std::bitset<MAX_SIZE> bits(res);
 	FILE* pFile;
 	pFile = fopen("output.dat", "wb");
 
-	//first save image height, width
-	//printf("%d", sizeof(img.rows));
-	fwrite(&img.rows, 4, 1, pFile);
-	fwrite(&img.cols, 4, 1, pFile);
+	if (pFile != NULL) {
+		//first save image height, width
+		//printf("%d", sizeof(img.rows));
+		fwrite(&img.rows, 4, 1, pFile);
+		fwrite(&img.cols, 4, 1, pFile);
 
-	//write out table
-	for (int i = 0; i < 256; i++) {
-		unsigned char size = encoded[i].size();//max 256
-		//if (size > 0) {
-			//fwrite(&i, 1, 1, pFile);
+		//write out table
+		for (int i = 0; i < 256; i++) {
+			unsigned char size = encoded[i].size();//max 256
 			fwrite(&size, 1, 1, pFile);
 			for (int j = 0; j < size; j++) {
-				if(encoded[i][j]=='0')
+				if (encoded[i][j] == '0')
 					WriteBit(0, pFile);
 				else WriteBit(1, pFile);
 			}
 			Flush_Bits(pFile);
-			//write code (multiple of 8=1 byte)
-			//std::bitset<MAX_SIZE_CODE> code_bits(encoded[i]);
-			//fwrite(&code_bits, 1, size / 8 + 1, pFile);
-		//}
-	}
+		}
 
-	if (pFile != NULL) {
-		//fwrite(&bits, 1, res.size() / 8, pFile);
+		//write actual image data
+		for (int i = 0; i < res.size(); i++) {
+			if (res[i] == '0')
+				WriteBit(0, pFile);
+			else WriteBit(1, pFile);
+		}
+		Flush_Bits(pFile);
 		fclose(pFile);
 	}
 }
 
 void decodeFromBinary() {
 	std::string encoded[256] = { "" };
-	FILE* pFile;
+	FILE* pFile, *f;
 	char c;
 	pFile = fopen("output.dat", "rb");
+	f = fopen("2.dat", "w+");
 
 	long width = 0, height = 0;
 
@@ -231,7 +231,7 @@ void decodeFromBinary() {
 	
 		std::string input = "";
 		int pc = 0;
-		for (int j = 0; j < size / 8 + 1; j++)
+		for (int j = 0; j < (size-1) / 8 + 1 && size>0; j++)
 		{
 			fread(&c, 1, 1, pFile);
 			for (int i = 0; i < 8; i++) { // or (int i = 0; i < 8; i++)  if you want reverse bit order in bytes
@@ -257,8 +257,11 @@ void decodeFromBinary() {
 			else image.append("0");
 		}
 	}
-	
-
+	unsigned int N(image.size());
+	fwrite(&N, sizeof(N), 1, f);
+	fwrite(image.c_str(), 1, N, f);
+	fflush(f);
+	std::cout << image;
 	fclose(pFile);
 }
 
