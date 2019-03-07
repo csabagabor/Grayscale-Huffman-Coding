@@ -172,7 +172,8 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 	std::string res ="";
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
-			res.append(encoded[img(i,j)]);
+			std::string corresponding_code = encoded[img(i, j)];
+			res.append(corresponding_code);
 		}
 	}
 	if (res.size() > MAX_SIZE) {
@@ -275,8 +276,9 @@ void decodeFromBinary() {
 			//decode string and build image
 			//res_size = image.size()
 			std::string good_code = "";
-			for (; pc < image.size(); pc++) {
+			while(pc < image.size()) {
 				good_code += image[pc];
+				pc++;//increment here because of 'break'
 				if (encoded.find(good_code) != encoded.end()) {//code is valid
 					uchar value = encoded[good_code];
 					img.at<uchar>(i, j) = value;
