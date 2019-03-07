@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <bitset>
+#include <map>
 
 #define MAX_SIZE 1000000
 #define MAX_SIZE_CODE 1000
@@ -214,7 +215,7 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 }
 
 void decodeFromBinary() {
-	std::string encoded[256] = { "" };
+	std::map<std::string, uchar> encoded;
 	FILE* pFile;
 	char c;
 	pFile = fopen("output.dat", "rb");
@@ -247,7 +248,7 @@ void decodeFromBinary() {
 		}
 		//std::string input(buffer, size / 8 + 1); // Convert char array into string
 		//std::bitset<MAX_SIZE_CODE>  codes_bits("1111");  // Convert string into bitset
-		encoded[i] = input;
+		encoded[input] = i;
 	}
 
 	//read size of encoded strings
