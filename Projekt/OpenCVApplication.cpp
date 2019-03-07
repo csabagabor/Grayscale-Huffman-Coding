@@ -7,7 +7,7 @@
 #include <string>
 #include <map>
 
-#define INPUT_FILE "cameraman.bmp"
+#define INPUT_FILE "1color.bmp"
 #define BINARY_FILE "OUTPUT.DAT"
 #define IMAGE_FILE "OUTPUT.bmp"
 char working_directory[MAX_PATH];
@@ -58,7 +58,7 @@ void encodeImage()
 		}
 	}
 
-	int probabilities[256], index = 0;
+	int probabilities[256] = {0}, index = 0;
 	for (int i = 0; i < 256; i++) {
 		if (histo[i] > 0) {
 			probabilities[index] = histo[i];
@@ -68,7 +68,7 @@ void encodeImage()
 
 	std::vector<code_struct> res = calculateCodes(probabilities, index);
 
-	std::string encoded[256];
+	std::string encoded[256] = {""};
 
 	for (int i = 0; i < 256; i++) {
 		if (histo[i] > 0) {
@@ -92,7 +92,13 @@ std::vector<code_struct> calculateCodes(int probabilities[], int index ) {
 	std::vector<code_struct> res;
 	code_struct e1, e2;
 	//if only 2 elements then stop
-	if (index == 2) {
+	if (index == 1) {//only one color
+		e1.probab = probabilities[0];
+		e1.cod.push_back('0');
+		res.push_back(e1);
+		return res;
+	}
+	else if (index == 2) {
 		e1.probab = probabilities[0];
 		e2.probab = probabilities[1];
 
@@ -198,6 +204,8 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 		}
 		flushBits(pFile);
 		fclose(pFile);
+
+		printf("Successful compression. Compression Ratio: %lf\n", (float)(img.cols*img.rows*8)/ res.size());
 	}
 }
 
