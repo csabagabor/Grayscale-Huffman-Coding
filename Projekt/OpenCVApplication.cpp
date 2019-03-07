@@ -79,8 +79,6 @@ void testOpenImage()
 			for (; it != res.end(); ) {
 				if (histo[i] == it->probab) {
 					encoded[i] = it->cod;
-					//reverse string
-					std::reverse(encoded[i].begin(), encoded[i].end());
 					it = res.erase(it);
 					break;
 				}
