@@ -5,7 +5,6 @@
 #include "common.h"
 #include <vector>
 #include <string>
-#include <bitset>
 #include <map>
 
 #define MAX_SIZE 1000000
