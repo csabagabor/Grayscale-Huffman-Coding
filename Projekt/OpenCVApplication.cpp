@@ -11,27 +11,27 @@
 #define BINARY_FILE "OUTPUT.DAT"
 #define IMAGE_FILE "OUTPUT.bmp"
 char working_directory[MAX_PATH];
-int current_bit = 0;
+int bit_number = 0;
 unsigned char bit_buffer;
 
-void WriteBit(int bit, FILE* f)
+void writeBit(char bit, FILE* f)
 {
-	if (bit)
-		bit_buffer |= (1 << current_bit);
+	if (bit == '1')
+		bit_buffer |= (1 << bit_number);
 
-	current_bit++;
-	if (current_bit == 8)
+	bit_number++;
+	if (bit_number == 8)//buffer full, needs to write 1 byte
 	{
 		fwrite(&bit_buffer, 1, 1, f);
-		current_bit = 0;
 		bit_buffer = 0;
+		bit_number = 0;
 	}
 }
 
-void Flush_Bits(FILE* f)
+void flushBits(FILE* f)
 {
-	while (current_bit)
-		WriteBit(0, f);
+	while (bit_number > 0)//if buffer is not empty write it into file
+		writeBit(0, f);
 }
 
 struct code_struct
@@ -184,11 +184,9 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 			unsigned char size = encoded[i].size();//max 256
 			fwrite(&size, 1, 1, pFile);
 			for (int j = 0; j < size; j++) {
-				if (encoded[i][j] == '0')
-					WriteBit(0, pFile);
-				else WriteBit(1, pFile);
+				writeBit(encoded[i][j], pFile);
 			}
-			Flush_Bits(pFile);
+			flushBits(pFile);
 		}
 
 		long res_size = res.size();
@@ -196,11 +194,9 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 		fwrite(&res_size, 4, 1, pFile);
 		//write actual image data
 		for (int i = 0; i < res.size(); i++) {
-			if (res[i] == '0')
-				WriteBit(0, pFile);
-			else WriteBit(1, pFile);
+			writeBit(res[i], pFile);
 		}
-		Flush_Bits(pFile);
+		flushBits(pFile);
 		fclose(pFile);
 	}
 }
