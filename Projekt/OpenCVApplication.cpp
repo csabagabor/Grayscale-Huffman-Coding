@@ -199,6 +199,9 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 			Flush_Bits(pFile);
 		}
 
+		long res_size = res.size();
+		//write size of res
+		fwrite(&res_size, 4, 1, pFile);
 		//write actual image data
 		for (int i = 0; i < res.size(); i++) {
 			if (res[i] == '0')
@@ -212,10 +215,9 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 
 void decodeFromBinary() {
 	std::string encoded[256] = { "" };
-	FILE* pFile, *f;
+	FILE* pFile;
 	char c;
 	pFile = fopen("output.dat", "rb");
-	f = fopen("2.dat", "w+");
 
 	long width = 0, height = 0;
 
@@ -247,21 +249,25 @@ void decodeFromBinary() {
 		//std::bitset<MAX_SIZE_CODE>  codes_bits("1111");  // Convert string into bitset
 		encoded[i] = input;
 	}
+
+	//read size of encoded strings
+	long res_size = 0;
+	//write size of res
+	fread(&res_size, 4, 1, pFile);
 	//read actual compressed image into a big buffer
 	std::string image = "";
+	int pc = 0;
 	while (fread(&c, 1, 1, pFile)) {
 		for (int i = 0; i < 8; i++) {
+			pc++;
+			if (pc > res_size) break;
 			int bit = ((c >> i) & 1);
 			if (bit == 1)
 				image.append("1");
 			else image.append("0");
 		}
 	}
-	unsigned int N(image.size());
-	fwrite(&N, sizeof(N), 1, f);
-	fwrite(image.c_str(), 1, N, f);
-	fflush(f);
-	std::cout << image;
+	
 	fclose(pFile);
 }
 
