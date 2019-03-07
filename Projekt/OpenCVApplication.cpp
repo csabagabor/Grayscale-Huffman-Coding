@@ -7,6 +7,9 @@
 #include <string>
 #include <map>
 
+#define INPUT_FILE "cameraman.bmp"
+#define BINARY_FILE "OUTPUT.DAT"
+#define IMAGE_FILE "OUTPUT.bmp"
 char working_directory[MAX_PATH];
 int current_bit = 0;
 unsigned char bit_buffer;
@@ -40,55 +43,49 @@ struct code_struct
 std::vector<code_struct> calculateCodes(int probabilities[], int index);
 void swap(int *xp, int *yp);
 void selectionSort(int arr[], int n);
-void saveToBinary(Mat_<uchar> img, std::string encoded[], std::string name);
+void saveToBinary(Mat_<uchar> img, std::string encoded[]);
 
 void encodeImage()
 {
-	char fname[MAX_PATH];
-	if (openFileDlg(fname)) {
-		//openFileDlg changes working directory
-		//set it back to previous version
-		SetCurrentDirectory(working_directory);
-		std::string fileName = "cell.bmp";
-		int histo[256] = { 0 };
-		Mat_<uchar>img;
-		img = imread("Images/" + fileName, CV_LOAD_IMAGE_GRAYSCALE);	// Read the image
+	std::string fileName = INPUT_FILE;
+	int histo[256] = { 0 };
+	Mat_<uchar>img;
+	img = imread("Images/" + fileName, CV_LOAD_IMAGE_GRAYSCALE);	// Read the image
 
-		for (int i = 0; i < img.rows; i++) {
-			for (int j = 0; j < img.cols; j++) {
-				histo[img(i, j)]++;
-			}
+	for (int i = 0; i < img.rows; i++) {
+		for (int j = 0; j < img.cols; j++) {
+			histo[img(i, j)]++;
 		}
+	}
 
-		int probabilities[256], index = 0;
-		for (int i = 0; i < 256; i++) {
-			if (histo[i] > 0) {
-				probabilities[index] = histo[i];
-				index++;
-			}
+	int probabilities[256], index = 0;
+	for (int i = 0; i < 256; i++) {
+		if (histo[i] > 0) {
+			probabilities[index] = histo[i];
+			index++;
 		}
+	}
 
-		std::vector<code_struct> res = calculateCodes(probabilities, index);
+	std::vector<code_struct> res = calculateCodes(probabilities, index);
 
-		std::string encoded[256];
+	std::string encoded[256];
 
-		for (int i = 0; i < 256; i++) {
-			if (histo[i] > 0) {
-				std::vector<code_struct>::iterator it = res.begin();
-				for (; it != res.end(); ) {
-					if (histo[i] == it->probab) {
-						encoded[i] = it->cod;
-						it = res.erase(it);
-						break;
-					}
-					else {
-						++it;
-					}
+	for (int i = 0; i < 256; i++) {
+		if (histo[i] > 0) {
+			std::vector<code_struct>::iterator it = res.begin();
+			for (; it != res.end(); ) {
+				if (histo[i] == it->probab) {
+					encoded[i] = it->cod;
+					it = res.erase(it);
+					break;
+				}
+				else {
+					++it;
 				}
 			}
 		}
-		saveToBinary(img, encoded, fileName);
 	}
+	saveToBinary(img, encoded);
 }
 
 std::vector<code_struct> calculateCodes(int probabilities[], int index ) {
@@ -164,7 +161,7 @@ void selectionSort(int arr[], int n)
 	}
 }
 
-void saveToBinary(Mat_<uchar> img, std::string encoded[], std::string saveName)
+void saveToBinary(Mat_<uchar> img, std::string encoded[])
 {
 	std::string res ="";
 	for (int i = 0; i < img.rows; i++) {
@@ -174,7 +171,7 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[], std::string saveName)
 		}
 	}
 	FILE* pFile;
-	pFile = fopen((saveName+".dat").c_str(), "wb");
+	pFile = fopen(BINARY_FILE, "wb");
 
 	if (pFile != NULL) {
 		//first save image height, width
@@ -213,7 +210,7 @@ void decodeFromBinary() {
 	std::map<std::string, uchar> encoded;
 	FILE* pFile;
 	char c;
-	pFile = fopen("output.dat", "rb");
+	pFile = fopen(BINARY_FILE, "rb");
 
 	long width = 0, height = 0;
 
@@ -278,6 +275,10 @@ void decodeFromBinary() {
 			}
 		}
 	}
+
+	//save image
+	imwrite(IMAGE_FILE, img);
+	//show image
 	imshow("image", img);
 	waitKey();
 	fclose(pFile);
@@ -285,9 +286,6 @@ void decodeFromBinary() {
 
 int main()
 {
-	//file open dialog changes working directory
-	//so save it
-	GetModuleFileName(NULL, working_directory, MAX_PATH);
 	int op;
 	do
 	{
