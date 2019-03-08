@@ -1,6 +1,16 @@
-// OpenCVApplication.cpp : Defines the entry point for the console application.
-//
+// 
+/* File Format
+*head:*
+"rows"(4Bytes) "cols"(4Bytes)
 
+*table:*
+256 number of times: "Size"(1Byte) "code"("Size" number bits supplemented with some more bits to make up full bytes)
+
+*actual image data:*
+"size of image"(4Bytes) - indicates the number of bits in the full huffman encoding of the image
+"bits of the huffman encoding"("size of image" number of bits supplemented with some more bits to make up full bytes)
+  -bits are not stored consecutively, ex. 0b(01100100 00111110) stores the code 00100110 011111..
+*/
 #include "stdafx.h"
 #include "common.h"
 #include <vector>
@@ -284,10 +294,15 @@ void decodeFromBinary() {
 				}
 			}
 		}
-		
+
 		//save image
 		std::string outFile(fname);
-		outFile = outFile.substr(0, outFile.size() - 8) + ".out.bmp";
+		if (outFile.size() > 8 && strstr(outFile.c_str(), ".bmp")) {//check is original file contained BMP extension
+		 outFile = outFile.substr(0, outFile.size() - 8) + ".out.bmp";
+		}
+		else{
+			outFile = outFile.substr(0, outFile.size() - 4) + ".out.bmp";
+		}
 		imwrite(outFile, img);
 		//show image
 		imshow("image", img);
