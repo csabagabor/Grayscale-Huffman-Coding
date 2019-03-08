@@ -17,6 +17,12 @@
 #include <string>
 #include <map>
 
+long totalHeaderSize = 0;//used for analytics purposes only
+long totalBodySize = 0;//used for analytics purposes only
+bool write_header = false;
+
+
+
 int bit_number = 0;
 unsigned char bit_buffer;
 
@@ -28,6 +34,11 @@ void writeBit(char bit, FILE* f)
 	bit_number++;
 	if (bit_number == 8)//buffer full, needs to write 1 byte
 	{
+		//analytics only
+		if (write_header) totalHeaderSize++;
+		else totalBodySize++;
+
+		//
 		fwrite(&bit_buffer, 1, 1, f);
 		bit_buffer = 0;
 		bit_number = 0;
@@ -192,6 +203,10 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[], std::string fileName)
 	FILE* pFile;
 	pFile = fopen(fileName.c_str(), "wb");
 
+	totalHeaderSize = 0;//used for analytics purposes only
+	totalBodySize = 0;//used for analytics purposes only
+	write_header = true;//used for analytics purposes only
+
 	if (pFile != NULL) {
 		//first save image height, width
 		fwrite(&img.rows, 4, 1, pFile);
@@ -207,6 +222,8 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[], std::string fileName)
 			flushBits(pFile);
 		}
 
+		write_header = false;//used for analytics purposes only
+
 		long res_size = res.size();
 		//write size of res
 		fwrite(&res_size, 4, 1, pFile);
@@ -218,6 +235,7 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[], std::string fileName)
 		fclose(pFile);
 
 		printf("Successful compression. Compression Ratio: %lf\n", (float)(img.cols*img.rows*8)/ res.size());
+		printf("Header/Body Ratio: %lf\n", (float)(totalHeaderSize) / totalBodySize);
 	}
 }
 
