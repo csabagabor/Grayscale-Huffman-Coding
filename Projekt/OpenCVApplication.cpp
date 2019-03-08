@@ -7,11 +7,6 @@
 #include <string>
 #include <map>
 
-#define INPUT_FILE "1color.bmp"
-#define BINARY_FILE "OUTPUT.DAT"
-#define IMAGE_FILE "OUTPUT.bmp"
-char working_directory[MAX_PATH];
-char working_directory2[MAX_PATH];
 int bit_number = 0;
 unsigned char bit_buffer;
 
@@ -44,64 +39,62 @@ struct code_struct
 std::vector<code_struct> calculateCodes(int probabilities[], int index);
 void swap(int *xp, int *yp);
 void selectionSort(int arr[], int n);
-void saveToBinary(Mat_<uchar> img, std::string encoded[]);
+void saveToBinary(Mat_<uchar> img, std::string encoded[], std::string name);
 
 void encodeImage()
 {
 	char fname[MAX_PATH];
-	//if (openFileDlg(fname));
-	GetModuleFileName(NULL, working_directory2, MAX_PATH);
-	SetCurrentDirectory(working_directory);
-	GetModuleFileName(NULL, working_directory2, MAX_PATH);
+	if (openFileDlg(fname)) {
+		int histo[256] = { 0 };
+		Mat_<uchar>img;
 
-	std::string fileName = INPUT_FILE;
-	int histo[256] = { 0 };
-	Mat_<uchar>img;
+		std::string path = fname;
+		img = imread(path, CV_LOAD_IMAGE_GRAYSCALE);	// Read the image
 
-	std::string path = "C:\\Users\\Csabi\\Pictures\\IP\\Grayscale-Huffman-Coding\\1color.bmp";
-	img = imread(path, CV_LOAD_IMAGE_GRAYSCALE);	// Read the image
-
-	for (int i = 0; i < img.rows; i++) {
-		for (int j = 0; j < img.cols; j++) {
-			histo[img(i, j)]++;
+		for (int i = 0; i < img.rows; i++) {
+			for (int j = 0; j < img.cols; j++) {
+				histo[img(i, j)]++;
+			}
 		}
-	}
 
-	int probabilities[256] = {0}, index = 0;
-	for (int i = 0; i < 256; i++) {
-		if (histo[i] > 0) {
-			probabilities[index] = histo[i];
-			index++;
+		int probabilities[256] = { 0 }, index = 0;
+		for (int i = 0; i < 256; i++) {
+			if (histo[i] > 0) {
+				probabilities[index] = histo[i];
+				index++;
+			}
 		}
-	}
 
-	std::vector<code_struct> res = calculateCodes(probabilities, index);
+		std::vector<code_struct> res = calculateCodes(probabilities, index);
 
-	std::string encoded[256] = {""};
+		std::string encoded[256] = { "" };
 
-	for (int i = 0; i < 256; i++) {
-		if (histo[i] > 0) {
-			std::vector<code_struct>::iterator it = res.begin();
-			for (; it != res.end(); ) {
-				if (histo[i] == it->probab) {
-					encoded[i] = it->cod;
-					it = res.erase(it);
-					break;
-				}
-				else {
-					++it;
+		for (int i = 0; i < 256; i++) {
+			if (histo[i] > 0) {
+				std::vector<code_struct>::iterator it = res.begin();
+				for (; it != res.end(); ) {
+					if (histo[i] == it->probab) {
+						encoded[i] = it->cod;
+						it = res.erase(it);
+						break;
+					}
+					else {
+						++it;
+					}
 				}
 			}
 		}
+
+		//save output in same folder with extension .dat
+		saveToBinary(img, encoded, std::string(fname)+".dat");
 	}
-	saveToBinary(img, encoded);
 }
 
 std::vector<code_struct> calculateCodes(int probabilities[], int index ) {
 	std::vector<code_struct> res;
 	code_struct e1, e2;
-	printf("%d\n", index);
-	//if only 2 elements then stop
+	
+	//if less than 2 elements then stop
 	if (index == 1) {//only one color
 		e1.probab = probabilities[0];
 		e1.cod.push_back('0');
@@ -177,7 +170,7 @@ void selectionSort(int arr[], int n)
 	}
 }
 
-void saveToBinary(Mat_<uchar> img, std::string encoded[])
+void saveToBinary(Mat_<uchar> img, std::string encoded[], std::string fileName)
 {
 	std::string res ="";
 	for (int i = 0; i < img.rows; i++) {
@@ -187,11 +180,10 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 		}
 	}
 	FILE* pFile;
-	pFile = fopen(BINARY_FILE, "wb");
+	pFile = fopen(fileName.c_str(), "wb");
 
 	if (pFile != NULL) {
 		//first save image height, width
-		//printf("%d", sizeof(img.rows));
 		fwrite(&img.rows, 4, 1, pFile);
 		fwrite(&img.cols, 4, 1, pFile);
 
@@ -221,94 +213,91 @@ void saveToBinary(Mat_<uchar> img, std::string encoded[])
 
 void decodeFromBinary() {
 	
-	std::map<std::string, uchar> encoded;
-	FILE* pFile;
-	char c;
-	pFile = fopen(BINARY_FILE, "rb");
+	char fname[MAX_PATH];
+	if (openFileDlg(fname)) {
 
-	long width = 0, height = 0;
+		std::map<std::string, uchar> encoded;
+		FILE* pFile;
+		char c;
+		pFile = fopen(fname, "rb");
 
-	//read iamge dimensions
-	fread(&height, 4, 1, pFile);
-	fread(&width, 4, 1, pFile);
+		long width = 0, height = 0;
 
-	Mat img(height, width, CV_8UC1);//store result in this
-	for (int i = 0; i < 256; i++) {
-		unsigned char size;
-		fread(&size, 1, 1, pFile);
-	
-		std::string input = "";
+		//read iamge dimensions
+		fread(&height, 4, 1, pFile);
+		fread(&width, 4, 1, pFile);
+
+		Mat img(height, width, CV_8UC1);//store result in this
+		for (int i = 0; i < 256; i++) {
+			unsigned char size;
+			fread(&size, 1, 1, pFile);
+
+			std::string input = "";
+			int pc = 0;
+			for (int j = 0; j < (size - 1) / 8 + 1 && size>0; j++)
+			{
+				fread(&c, 1, 1, pFile);
+				for (int i = 0; i < 8; i++) { // or (int i = 0; i < 8; i++)  if you want reverse bit order in bytes
+					pc++;
+					if (pc > size) break;
+					int bit = ((c >> i) & 1);
+					if (bit == 1)
+						input.append("1");
+					else input.append("0");
+				}
+			}
+			encoded[input] = i;
+		}
+
+		//read size of encoded strings
+		long res_size = 0;
+		//write size of res
+		fread(&res_size, 4, 1, pFile);
+		//read actual compressed image into a big buffer
+		std::string image = "";
 		int pc = 0;
-		for (int j = 0; j < (size-1) / 8 + 1 && size>0; j++)
-		{
-			fread(&c, 1, 1, pFile);
-			for (int i = 0; i < 8; i++) { // or (int i = 0; i < 8; i++)  if you want reverse bit order in bytes
+		while (fread(&c, 1, 1, pFile)) {
+			for (int i = 0; i < 8; i++) {
 				pc++;
-				if (pc > size) break;
+				if (pc > res_size) break;
 				int bit = ((c >> i) & 1);
-				if(bit==1)
-					input.append("1");
-				else input.append("0");
+				if (bit == 1)
+					image.append("1");
+				else image.append("0");
 			}
 		}
-		encoded[input] = i;
-	}
 
-	//read size of encoded strings
-	long res_size = 0;
-	//write size of res
-	fread(&res_size, 4, 1, pFile);
-	//read actual compressed image into a big buffer
-	std::string image = "";
-	int pc = 0;
-	while (fread(&c, 1, 1, pFile)) {
-		for (int i = 0; i < 8; i++) {
-			pc++;
-			if (pc > res_size) break;
-			int bit = ((c >> i) & 1);
-			if (bit == 1)
-				image.append("1");
-			else image.append("0");
-		}
-	}
-
-	pc = 0;
-	for (int i = 0; i < img.rows; i++) {
-		for (int j = 0; j < img.cols; j++) {
-			//decode string and build image
-			//res_size = image.size()
-			std::string good_code = "";
-			while(pc < image.size()) {
-				good_code += image[pc];
-				pc++;//increment here because of 'break'
-				if (encoded.find(good_code) != encoded.end()) {//code is valid
-					uchar value = encoded[good_code];
-					img.at<uchar>(i, j) = value;
-					break;
+		pc = 0;
+		for (int i = 0; i < img.rows; i++) {
+			for (int j = 0; j < img.cols; j++) {
+				//decode string and build image
+				//res_size = image.size()
+				std::string good_code = "";
+				while (pc < image.size()) {
+					good_code += image[pc];
+					pc++;//increment here because of 'break'
+					if (encoded.find(good_code) != encoded.end()) {//code is valid
+						uchar value = encoded[good_code];
+						img.at<uchar>(i, j) = value;
+						break;
+					}
 				}
 			}
 		}
+		
+		//save image
+		std::string outFile(fname);
+		outFile = outFile.substr(0, outFile.size() - 8) + ".out.bmp";
+		imwrite(outFile, img);
+		//show image
+		imshow("image", img);
+		waitKey();
+		fclose(pFile);
 	}
+}
 
-	//save image
-	imwrite(IMAGE_FILE, img);
-	//show image
-	imshow("image", img);
-	waitKey();
-	fclose(pFile);
-}
-void PrintFullPath(char * partialPath)
-{
-	char full[_MAX_PATH];
-	if (_fullpath(full, partialPath, _MAX_PATH) != NULL)
-		printf("Full path is: %s\n", full);
-	else
-		printf("Invalid path\n");
-}
 int main()
 {
-	PrintFullPath(".\\");
-	GetModuleFileName(NULL, working_directory, MAX_PATH);
 	int op;
 	do
 	{
