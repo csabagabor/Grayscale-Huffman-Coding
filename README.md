@@ -1,1 +1,1 @@
-# Grayscale-Huffman-Coding
+# Grayscale-Huffman-Coding in OpenCV
